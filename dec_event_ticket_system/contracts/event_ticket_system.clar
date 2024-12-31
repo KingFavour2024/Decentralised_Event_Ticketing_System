@@ -96,3 +96,76 @@
 (define-read-only (calculate-platform-fee (amount uint))
     (/ (* amount (var-get platform-fee-percent)) u100)
 )
+
+
+;; Event Management Functions
+(define-public (create-event
+    (name (string-utf8 100))
+    (description (string-utf8 500))
+    (venue (string-utf8 100))
+    (date uint)
+    (total-tickets uint)
+    (ticket-price uint)
+    (refund-window uint)
+    (category (string-utf8 50))
+)
+    (let
+        ((event-id (var-get next-event-id))
+         (caller tx-sender))
+        
+        ;; Validate inputs
+        (asserts! (>= ticket-price (var-get min-ticket-price)) ERR-INVALID-PRICE)
+        (asserts! (<= refund-window (var-get max-refund-window)) ERR-INVALID-PRICE)
+        (asserts! (> date block-height) ERR-EVENT-EXPIRED)
+        
+        (ok (begin
+            ;; Create event
+            (map-set Events
+                { event-id: event-id }
+                {
+                    name: name,
+                    description: description,
+                    organizer: caller,
+                    venue: venue,
+                    date: date,
+                    total-tickets: total-tickets,
+                    tickets-sold: u0,
+                    ticket-price: ticket-price,
+                    is-active: true,
+                    refund-window: refund-window,
+                    revenue: u0,
+                    category: category
+                }
+            )
+            
+            ;; Initialize event tickets
+            (map-set EventTickets
+                { event-id: event-id }
+                { ticket-ids: (list) }
+            )
+            
+            ;; Update organizer data
+            (match (get-organizer-revenue caller)
+                prev-data (map-set OrganizerRevenue
+                    { organizer: caller }
+                    {
+                        total-revenue: (get total-revenue prev-data),
+                        pending-withdrawals: (get pending-withdrawals prev-data),
+                        events-organized: (+ (get events-organized prev-data) u1)
+                    }
+                )
+                (map-set OrganizerRevenue
+                    { organizer: caller }
+                    {
+                        total-revenue: u0,
+                        pending-withdrawals: u0,
+                        events-organized: u1
+                    }
+                )
+            )
+            
+            ;; Increment event counter
+            (var-set next-event-id (+ event-id u1))
+        ))
+    )
+)
