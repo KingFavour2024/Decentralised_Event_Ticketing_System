@@ -74,3 +74,25 @@
 (define-data-var platform-fee-percent uint u5)
 (define-data-var min-ticket-price uint u1000000) ;; in microSTX
 (define-data-var max-refund-window uint u1209600) ;; 14 days in blocks
+
+
+;; Read-Only Functions
+(define-read-only (get-event (event-id uint))
+    (map-get? Events { event-id: event-id })
+)
+
+(define-read-only (get-ticket (ticket-id uint))
+    (map-get? Tickets { ticket-id: ticket-id })
+)
+
+(define-read-only (get-user-tickets (user principal))
+    (map-get? UserTickets { user: user })
+)
+
+(define-read-only (get-organizer-revenue (organizer principal))
+    (map-get? OrganizerRevenue { organizer: organizer })
+)
+
+(define-read-only (calculate-platform-fee (amount uint))
+    (/ (* amount (var-get platform-fee-percent)) u100)
+)
