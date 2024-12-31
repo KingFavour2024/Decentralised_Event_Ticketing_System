@@ -296,3 +296,19 @@
         ))
     )
 )
+
+;; Contract Management
+(define-public (update-platform-fee (new-fee uint))
+    (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+        (asserts! (<= new-fee u100) ERR-INVALID-PRICE)
+        (ok (var-set platform-fee-percent new-fee))
+    )
+)
+
+(define-public (update-min-ticket-price (new-price uint))
+    (begin
+        (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+        (ok (var-set min-ticket-price new-price))
+    )
+)
