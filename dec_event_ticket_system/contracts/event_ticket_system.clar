@@ -262,3 +262,37 @@
         ))
     )
 )
+
+;; Ticket Refund
+(define-public (refund-ticket (ticket-id uint))
+    (let
+        ((ticket (unwrap! (get-ticket ticket-id) ERR-TICKET-NOT-FOUND))
+         (event (unwrap! (get-event (get event-id ticket)) ERR-EVENT-NOT-FOUND))
+         (caller tx-sender))
+        
+        ;; Validate refund
+        (asserts! (is-eq caller (get owner ticket)) ERR-NOT-AUTHORIZED)
+        (asserts! (not (get is-used ticket)) ERR-TICKET-USED)
+        (asserts! (not (get is-refunded ticket)) ERR-TICKET-USED)
+        (asserts! (<= (- block-height (get purchase-date ticket)) (get refund-window event)) ERR-REFUND-WINDOW-CLOSED)
+        
+        ;; Process refund
+        (try! (stx-transfer? (get purchase-price ticket) (get organizer event) caller))
+        
+        (ok (begin
+            ;; Update ticket
+            (map-set Tickets
+                { ticket-id: ticket-id }
+                (merge ticket { is-refunded: true })
+            )
+            
+            ;; Update event revenue
+            (map-set Events
+                { event-id: (get event-id ticket) }
+                (merge event {
+                    revenue: (- (get revenue event) (get purchase-price ticket))
+                })
+            )
+        ))
+    )
+)
