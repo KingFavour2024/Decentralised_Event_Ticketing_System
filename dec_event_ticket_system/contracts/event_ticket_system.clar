@@ -242,3 +242,23 @@
         ))
     )
 )
+
+
+;; Ticket Validation
+(define-public (validate-ticket (ticket-id uint))
+    (let
+        ((ticket (unwrap! (get-ticket ticket-id) ERR-TICKET-NOT-FOUND))
+         (event (unwrap! (get-event (get event-id ticket)) ERR-EVENT-NOT-FOUND))
+         (caller tx-sender))
+        
+        ;; Validate ticket
+        (asserts! (is-eq caller (get organizer event)) ERR-NOT-AUTHORIZED)
+        (asserts! (not (get is-used ticket)) ERR-TICKET-USED)
+        (asserts! (not (get is-refunded ticket)) ERR-TICKET-USED)
+        
+        (ok (map-set Tickets
+            { ticket-id: ticket-id }
+            (merge ticket { is-used: true })
+        ))
+    )
+)
