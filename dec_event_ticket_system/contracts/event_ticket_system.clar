@@ -65,3 +65,12 @@
         events-organized: uint
     }
 )
+
+
+;; Data Variables
+(define-data-var contract-owner principal tx-sender)
+(define-data-var next-event-id uint u1)
+(define-data-var next-ticket-id uint u1)
+(define-data-var platform-fee-percent uint u5)
+(define-data-var min-ticket-price uint u1000000) ;; in microSTX
+(define-data-var max-refund-window uint u1209600) ;; 14 days in blocks
